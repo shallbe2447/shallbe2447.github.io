@@ -11,23 +11,27 @@
         .border-black-thick { border: 2px solid #000; }
         .input-box { border: 1px solid #000; padding: 8px; width: 100%; outline: none; font-size: 13px; }
         .btn-black { background-color: #000; color: #fff; padding: 12px; font-weight: bold; width: 100%; }
+        .btn-white { background-color: #fff; color: #000; border: 1px solid #000; padding: 12px; font-weight: bold; width: 100%; }
         .status-badge { background-color: #000; color: #fff; border-radius: 12px; padding: 2px 10px; font-size: 10px; }
     </style>
 </head>
 <body class="p-4">
     <div class="flex items-center gap-3 mb-6">
-        <div class="bg-black text-white p-2 rounded">📄</div>
-        <div><h1 class="font-bold text-sm">Contract Filler</h1><p class="text-[10px] text-gray-400">Автоматизация ЭДО</p></div>
+        <div class="bg-black text-white p-2 rounded text-xs">📄</div>
+        <div><h1 class="font-bold text-sm">Contract Filler</h1><p class="text-[10px] text-gray-400">Автозаполнение данных</p></div>
     </div>
 
     <div class="border-black-thick p-4 mb-4">
-        <h2 class="font-bold text-xs uppercase mb-3 text-gray-500">Вставьте данные из CRM</h2>
-        <textarea id="rawText" class="w-full h-40 border border-black p-2 text-xs mb-3 font-mono" placeholder="1. ФИО..."></textarea>
-        <button onclick="extractData()" class="btn-black">ИЗВЛЕЧЬ ДАННЫЕ</button>
+        <h2 class="font-bold text-[10px] uppercase mb-3 text-gray-500">Вставьте данные клиента</h2>
+        <textarea id="rawText" class="w-full h-40 border border-black p-2 text-xs mb-3 font-mono" placeholder="Скопируйте список сюда..."></textarea>
+        <div class="flex gap-2">
+            <button onclick="fillExample()" class="btn-white text-xs">ПРИМЕР</button>
+            <button onclick="extractData()" class="btn-black text-xs">ИЗВЛЕЧЬ ДАННЫЕ</button>
+        </div>
     </div>
 
     <div class="border-black-thick p-4 mb-24">
-        <div class="flex justify-between items-center mb-4 text-xs font-bold uppercase">
+        <div class="flex justify-between items-center mb-4 text-[10px] font-bold uppercase">
             <span>Проверка заполнения</span>
             <span id="percent">0%</span>
         </div>
@@ -52,11 +56,38 @@
         fieldNames.forEach((name, i) => {
             container.innerHTML += `
                 <div class="flex items-center border-b border-gray-100 pb-2 gap-2">
-                    <span class="text-[11px] w-32">${name}</span>
+                    <span class="text-[11px] w-32 font-medium">${name}</span>
                     <input type="text" id="f${i}" class="input-box flex-grow h-7" oninput="updateStatus()">
                     <div id="s${i}" class="opacity-0 status-badge">OK</div>
                 </div>`;
         });
+
+        // Функция заполнения примера
+        function fillExample() {
+            const exampleData = [
+                "Иванов Иван Иванович",
+                "7 класс",
+                "123456789012",
+                "Иванова Анна Петровна",
+                "987654321098",
+                "г. Алматы, ул. Абая 10, кв 5",
+                "87071234567",
+                "012345678",
+                "МВД РК, 12.05.2015",
+                "test@mail.kz",
+                "77000",
+                "168000",
+                "12",
+                "15"
+            ];
+            
+            exampleData.forEach((val, i) => {
+                document.getElementById('f' + i).value = val;
+            });
+            
+            document.getElementById('rawText').value = exampleData.join('\n');
+            updateStatus();
+        }
 
         function extractData() {
             const text = document.getElementById('rawText').value;
@@ -81,19 +112,13 @@
         }
 
         function sendToTelegram() {
-            try {
-                let res = [];
-                for (let i = 0; i < 14; i++) {
-                    let v = document.getElementById('f' + i).value;
-                    if (!v) { tg.showAlert('Заполните все пункты!'); return; }
-                    res.push(v);
-                    if (i === 11) res.push("Авторасчет");
-                }
-                // Отправка данных
-                tg.sendData(JSON.stringify(res));
-                // Принудительное закрытие для надежности
-                setTimeout(() => { tg.close(); }, 300);
-            } catch (e) { alert("Ошибка: " + e.message); }
+            let res = [];
+            for (let i = 0; i < 14; i++) {
+                let v = document.getElementById('f' + i).value;
+                if (!v) { tg.showAlert('Заполните все пункты!'); return; }
+                res.push(v);
+            }
+            tg.sendData(JSON.stringify(res));
         }
     </script>
 </body>
