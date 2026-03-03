@@ -1,103 +1,31 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ЭДО Контракт</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { background-color: var(--tg-theme-bg-color, #f3f4f6); color: var(--tg-theme-text-color, #222); }
-        .input-group { margin-bottom: 1rem; }
-        .input-label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem; color: #4b5563; }
-        .input-field { background: var(--tg-theme-secondary-bg-color, #fff); border: 1px solid #d1d5db; border-radius: 10px; padding: 10px; width: 100%; outline: none; transition: border 0.2s; }
-        .input-field:focus { border-color: var(--tg-theme-button-color, #3b82f6); }
-        .btn-send { background-color: var(--tg-theme-button-color, #3b82f6); color: var(--tg-theme-button-text-color, #fff); border-radius: 10px; padding: 14px; width: 100%; font-weight: bold; margin-top: 1rem; }
-    </style>
-</head>
-<body class="p-4 max-w-md mx-auto">
-    <header class="mb-6">
-        <h1 class="text-2xl font-bold">Данные договора</h1>
-        <p class="text-sm opacity-70">Заполните все поля для генерации ЭДО</p>
-    </header>
-    
-    <div id="form-container">
-        <div class="input-group">
-            <label class="input-label">1. ФИО Ребенка</label>
-            <input type="text" id="f1" class="input-field" placeholder="Иванов Иван">
-        </div>
-        <div class="input-group">
-            <label class="input-label">2. Класс</label>
-            <input type="number" id="f2" class="input-field" placeholder="7">
-        </div>
-        <div class="input-group">
-            <label class="input-label">3. ИИН ребенка</label>
-            <input type="number" id="f3" class="input-field" placeholder="12 цифр">
-        </div>
-        <div class="input-group">
-            <label class="input-label">4. ФИО Родителя</label>
-            <input type="text" id="f4" class="input-field" placeholder="Иванова Анна">
-        </div>
-        <div class="input-group">
-            <label class="input-label">5. ИИН родителя</label>
-            <input type="number" id="f5" class="input-field" placeholder="12 цифр">
-        </div>
-        <div class="input-group">
-            <label class="input-label">6. Адрес проживания</label>
-            <input type="text" id="f6" class="input-field" placeholder="Алматы, ул...">
-        </div>
-        <div class="input-group">
-            <label class="input-label">7. Телефон</label>
-            <input type="text" id="f7" class="input-field" placeholder="+7...">
-        </div>
-        <div class="input-group">
-            <label class="input-label">8. № Удостоверения</label>
-            <input type="text" id="f8" class="input-field" placeholder="000000000">
-        </div>
-        <div class="input-group">
-            <label class="input-label">9. Кем/когда выдано</label>
-            <input type="text" id="f9" class="input-field" placeholder="МВД РК, 01.01.2020">
-        </div>
-        <div class="input-group">
-            <label class="input-label">10. Email</label>
-            <input type="email" id="f10" class="input-field" placeholder="mail@example.com">
-        </div>
-        <div class="input-group">
-            <label class="input-label">11. Сумма 1-го платежа</label>
-            <input type="number" id="f11" class="input-field" placeholder="77000">
-        </div>
-        <div class="input-group">
-            <label class="input-label">12. Ежемесячный платеж</label>
-            <input type="number" id="f12" class="input-field" placeholder="168000">
-        </div>
-        <div class="input-group">
-            <label class="input-label">14. День договора</label>
-            <input type="number" id="f14" class="input-field" placeholder="12">
-        </div>
-        <div class="input-group">
-            <label class="input-label">15. Срок оплаты</label>
-            <input type="number" id="f15" class="input-field" placeholder="15">
-        </div>
+@dp.message(F.web_app_data)
+async def web_app_handler(message: types.Message):
+    user_id = message.from_user.id
+    if user_id not in user_data_storage:
+        await message.answer("❌ Бот не видит шаблон. Скинь файл .docx еще раз!")
+        return
+
+    # Mini App присылает JSON-массив
+    try:
+        lines = json.loads(message.web_app_data.data)
         
-        <button onclick="sendData()" class="btn-send">Сформировать и отправить</button>
-    </div>
+        # Проверка: если в Mini App что-то пошло не так
+        if not isinstance(lines, list) or len(lines) < 15:
+            await message.answer("⚠️ Ошибка: Данные из Mini App пришли в неверном формате.")
+            return
 
-    <script>
-        let tg = window.Telegram.WebApp;
-        tg.expand();
-        tg.MainButton.hide();
-
-        function sendData() {
-            let result = [];
-            for (let i = 1; i <= 15; i++) {
-                if (i === 13) { result.push("Авторасчет"); continue; }
-                let val = document.getElementById('f' + i).value;
-                if (!val) { tg.showAlert('Пожалуйста, заполните все поля!'); return; }
-                result.push(val);
-            }
-            // Отправляем массив данных обратно в бот
-            tg.sendData(JSON.stringify(result));
-        }
-    </script>
-</body>
-</html>
+        await message.answer(f"⚙️ Обрабатываю данные для: **{lines[0]}**...")
+        
+        u_data = user_data_storage[user_id]
+        # Вызываем твою стандартную функцию fill_contract
+        result_stream = fill_contract(u_data["template"], lines, u_data["month"])
+        
+        # Отправляем готовый файл
+        document = types.BufferedInputFile(result_stream.read(), filename=f"Dogovor_{lines[0]}.docx")
+        await message.answer_document(
+            document, 
+            caption=f"✅ Договор готов!\n👤 Ребенок: {lines[0]}\n📅 Режим: {u_data['month']}\n\nОтправьте админам для ЭДО."
+        )
+    except Exception as e:
+        logging.error(f"Error in web_app_handler: {e}")
+        await message.answer(f"❌ Произошла ошибка при генерации: {e}")
