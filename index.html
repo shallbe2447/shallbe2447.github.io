@@ -9,83 +9,111 @@
     <style>
         body { background-color: #fff; color: #000; font-family: sans-serif; }
         .border-black-thick { border: 2px solid #000; }
-        .input-box { border: 1px solid #000; padding: 8px; width: 100%; outline: none; font-size: 13px; }
+        /* Стиль для серых подсказок */
+        input::placeholder, textarea::placeholder { color: #9ca3af; font-style: italic; }
+        .input-box { border: 1px solid #000; padding: 8px; width: 100%; outline: none; font-size: 13px; transition: all 0.2s; }
         .btn-black { background-color: #000; color: #fff; padding: 12px; font-weight: bold; width: 100%; }
         .btn-white { background-color: #fff; color: #000; border: 1px solid #000; padding: 12px; font-weight: bold; width: 100%; }
-        .status-badge { background-color: #000; color: #fff; border-radius: 12px; padding: 2px 10px; font-size: 10px; }
+        .status-badge { background-color: #000; color: #fff; border-radius: 12px; padding: 2px 10px; font-size: 10px; font-weight: bold; }
+        .status-empty { background-color: #ef4444; color: #fff; border-radius: 50%; width: 20px; height: 20px; display: flex; items-center; justify-center; font-size: 12px; }
     </style>
 </head>
 <body class="p-4">
     <div class="flex items-center gap-3 mb-6">
-        <div class="bg-black text-white p-2 rounded text-xs">📄</div>
-        <div><h1 class="font-bold text-sm">Contract Filler</h1><p class="text-[10px] text-gray-400">Автозаполнение данных</p></div>
+        <div class="bg-black text-white p-2 rounded">📄</div>
+        <div>
+            <h1 class="font-bold text-sm">Contract Filler</h1>
+            <p class="text-[10px] text-gray-400">Автозаполнение данных</p>
+        </div>
     </div>
 
     <div class="border-black-thick p-4 mb-4">
-        <h2 class="font-bold text-[10px] uppercase mb-3 text-gray-500">Вставьте данные клиента</h2>
-        <textarea id="rawText" class="w-full h-40 border border-black p-2 text-xs mb-3 font-mono" placeholder="Скопируйте список сюда..."></textarea>
+        <h2 class="font-bold text-[10px] uppercase mb-3 text-gray-500 flex items-center gap-1">
+            <span class="text-xs">✏️</span> Вставьте данные клиента
+        </h2>
+        <textarea id="rawText" class="w-full h-44 border border-black p-2 text-xs mb-3 font-mono" 
+            placeholder="1. ФИО ребенка (например: Иванов Иван Иванович)&#10;2. Класс (например: 7)&#10;3. ИИН ребенка (например: 010203456789)..."></textarea>
         <div class="flex gap-2">
-            <button onclick="fillExample()" class="btn-white text-xs">ПРИМЕР</button>
+            <button id="btnExample" onclick="toggleExample()" class="btn-white text-xs">✨ ПРИМЕР</button>
             <button onclick="extractData()" class="btn-black text-xs">ИЗВЛЕЧЬ ДАННЫЕ</button>
         </div>
     </div>
 
     <div class="border-black-thick p-4 mb-24">
-        <div class="flex justify-between items-center mb-4 text-[10px] font-bold uppercase">
-            <span>Проверка заполнения</span>
-            <span id="percent">0%</span>
+        <div class="flex justify-between items-center mb-4">
+            <div class="flex items-center gap-1">
+                <span class="text-xs">ℹ️</span>
+                <h2 class="font-bold text-[10px] uppercase">Проверка данных</h2>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div id="progressLine" class="h-full bg-black w-0 transition-all duration-500"></div>
+                </div>
+                <span id="percent" class="text-[10px] font-bold">0%</span>
+            </div>
         </div>
         <div id="fieldsContainer" class="space-y-3"></div>
     </div>
 
     <div class="fixed bottom-0 left-0 w-full p-3 bg-white border-t border-black">
-        <button onclick="sendToTelegram()" class="btn-black py-4">В TELEGRAM</button>
+        <button onclick="sendToTelegram()" class="btn-black py-4 uppercase tracking-wider">В Telegram</button>
     </div>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        const fieldNames = [
-            "ФИО Ребенка", "Класс", "ИИН ребенка", "ФИО Родителя", "ИИН родителя",
-            "Адрес проживания", "Номер телефона", "№ удостоверения", "Кем/когда выдано",
-            "Email", "Первый платеж", "Ежемесячный платеж", "День договора", "Срок оплаты"
+        const fieldConfigs = [
+            { name: "ФИО Ребенка", placeholder: "Иванов Иван Иванович" },
+            { name: "Класс", placeholder: "7" },
+            { name: "ИИН ребенка", placeholder: "010203456789" },
+            { name: "ФИО Родителя", placeholder: "Иванова Мария Петровна" },
+            { name: "ИИН родителя", placeholder: "890102345678" },
+            { name: "Адрес проживания", placeholder: "г. Алматы, ул. Абая 10, кв. 5" },
+            { name: "Номер телефона", placeholder: "+7 (777) 123-45-67" },
+            { name: "№ удостоверения", placeholder: "012345678" },
+            { name: "Кем/когда выдано", placeholder: "15.03.2020, МВД РК" },
+            { name: "Email", placeholder: "ivanova@mail.com" },
+            { name: "Первый платеж", placeholder: "150000" },
+            { name: "Ежемесячный платеж", placeholder: "50000" },
+            { name: "День договора", placeholder: "12" },
+            { name: "Срок оплаты", placeholder: "15" }
         ];
 
         const container = document.getElementById('fieldsContainer');
-        fieldNames.forEach((name, i) => {
+        fieldConfigs.forEach((config, i) => {
             container.innerHTML += `
                 <div class="flex items-center border-b border-gray-100 pb-2 gap-2">
-                    <span class="text-[11px] w-32 font-medium">${name}</span>
-                    <input type="text" id="f${i}" class="input-box flex-grow h-7" oninput="updateStatus()">
-                    <div id="s${i}" class="opacity-0 status-badge">OK</div>
+                    <span class="text-[10px] text-gray-300 w-4">${i+1}</span>
+                    <span class="text-[11px] w-32 font-bold">${config.name}</span>
+                    <input type="text" id="f${i}" class="input-box flex-grow h-7" 
+                        placeholder="например: ${config.placeholder}" oninput="updateStatus()">
+                    <div id="s${i}" class="status-empty">—</div>
                 </div>`;
         });
 
-        // Функция заполнения примера
-        function fillExample() {
-            const exampleData = [
-                "Иванов Иван Иванович",
-                "7 класс",
-                "123456789012",
-                "Иванова Анна Петровна",
-                "987654321098",
-                "г. Алматы, ул. Абая 10, кв 5",
-                "87071234567",
-                "012345678",
-                "МВД РК, 12.05.2015",
-                "test@mail.kz",
-                "77000",
-                "168000",
-                "12",
-                "15"
-            ];
-            
-            exampleData.forEach((val, i) => {
-                document.getElementById('f' + i).value = val;
-            });
-            
-            document.getElementById('rawText').value = exampleData.join('\n');
+        let isExampleFilled = false;
+
+        function toggleExample() {
+            const btn = document.getElementById('btnExample');
+            if (!isExampleFilled) {
+                // Заполняем
+                const exampleData = [
+                    "Иванов Иван Иванович", "7 класс", "123456789012", "Иванова Анна Петровна",
+                    "987654321098", "г. Алматы, ул. Абая 10, кв 5", "87071234567", "012345678",
+                    "МВД РК, 12.05.2015", "test@mail.kz", "150000", "50000", "12", "15"
+                ];
+                exampleData.forEach((val, i) => document.getElementById('f' + i).value = val);
+                document.getElementById('rawText').value = exampleData.join('\n');
+                btn.innerText = "🗑️ ОЧИСТИТЬ";
+                isExampleFilled = true;
+            } else {
+                // Очищаем
+                for(let i=0; i<14; i++) document.getElementById('f' + i).value = "";
+                document.getElementById('rawText').value = "";
+                btn.innerText = "✨ ПРИМЕР";
+                isExampleFilled = false;
+            }
             updateStatus();
         }
 
@@ -93,7 +121,10 @@
             const text = document.getElementById('rawText').value;
             const lines = text.split('\n').filter(l => l.trim() !== "");
             lines.forEach((line, i) => {
-                if(i < 14) document.getElementById('f' + i).value = line.replace(/^\d+[\s.)]+/, "").trim();
+                if(i < 14) {
+                    let clean = line.replace(/^\d+[\s.)]+/, "").trim();
+                    document.getElementById('f' + i).value = clean;
+                }
             });
             updateStatus();
         }
@@ -101,21 +132,27 @@
         function updateStatus() {
             let filled = 0;
             for(let i=0; i<14; i++) {
-                if(document.getElementById('f' + i).value.length > 0) {
-                    document.getElementById('s' + i).classList.replace('opacity-0', 'opacity-100');
+                const input = document.getElementById('f' + i);
+                const badge = document.getElementById('s' + i);
+                if(input.value.trim().length > 0) {
+                    badge.innerHTML = "OK";
+                    badge.className = "status-badge";
                     filled++;
                 } else {
-                    document.getElementById('s' + i).classList.replace('opacity-100', 'opacity-0');
+                    badge.innerHTML = "—";
+                    badge.className = "status-empty";
                 }
             }
-            document.getElementById('percent').innerText = Math.round((filled / 14) * 100) + '%';
+            const prg = Math.round((filled / 14) * 100);
+            document.getElementById('percent').innerText = prg + '%';
+            document.getElementById('progressLine').style.width = prg + '%';
         }
 
         function sendToTelegram() {
             let res = [];
             for (let i = 0; i < 14; i++) {
-                let v = document.getElementById('f' + i).value;
-                if (!v) { tg.showAlert('Заполните все пункты!'); return; }
+                let v = document.getElementById('f' + i).value.trim();
+                if (!v) { tg.showAlert('Заполните поле: ' + fieldConfigs[i].name); return; }
                 res.push(v);
             }
             tg.sendData(JSON.stringify(res));
