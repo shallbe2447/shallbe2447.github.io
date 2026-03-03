@@ -10,36 +10,28 @@
         body { background-color: #fff; color: #000; font-family: sans-serif; }
         .border-black-thick { border: 2px solid #000; }
         .status-badge { background-color: #000; color: #fff; border-radius: 12px; padding: 2px 12px; font-size: 10px; font-weight: bold; }
-        .input-box { border: 1px solid #000; border-radius: 0px; padding: 8px; width: 100%; outline: none; font-size: 13px; }
-        .btn-black { background-color: #000; color: #fff; padding: 8px 16px; font-weight: bold; font-size: 13px; }
-        .btn-white { background-color: #fff; color: #000; border: 1px solid #000; padding: 8px 16px; font-size: 13px; }
+        .input-box { border: 1px solid #000; padding: 8px; width: 100%; outline: none; font-size: 13px; }
+        .btn-black { background-color: #000; color: #fff; padding: 10px 20px; font-weight: bold; }
     </style>
 </head>
-<body class="p-3">
+<body class="p-4">
     <div class="flex items-center gap-3 mb-6">
-        <div class="bg-black p-2 rounded text-white">📄</div>
-        <div>
-            <h1 class="font-bold text-sm">Contract Filler</h1>
-            <p class="text-[10px] text-gray-500">Автоматическое заполнение договоров</p>
-        </div>
+        <div class="bg-black text-white p-2 rounded">📄</div>
+        <div><h1 class="font-bold text-sm">Contract Filler</h1><p class="text-[10px] text-gray-400">Автозаполнение договоров</p></div>
     </div>
 
     <div class="border-black-thick p-4 mb-4">
-        <h2 class="font-bold text-xs uppercase mb-3 text-gray-600">Вставьте данные клиента</h2>
-        <textarea id="rawText" class="w-full h-40 border border-black p-2 text-xs mb-3 font-mono" placeholder="Скопируйте список сюда..."></textarea>
+        <h2 class="font-bold text-xs uppercase mb-3">Вставьте данные клиента</h2>
+        <textarea id="rawText" class="w-full h-40 border border-black p-2 text-xs mb-3 font-mono" placeholder="ИИН, ФИО..."></textarea>
         <div class="flex gap-2">
-            <button onclick="fillExample()" class="btn-white">Пример</button>
-            <button onclick="extractData()" class="btn-black">Извлечь данные</button>
+            <button onclick="extractData()" class="btn-black w-full">Извлечь данные</button>
         </div>
     </div>
 
     <div class="border-black-thick p-4 mb-24">
         <div class="flex justify-between items-center mb-4">
             <h2 class="font-bold text-xs uppercase">Проверка данных</h2>
-            <div class="flex items-center gap-2">
-                <div class="w-24 h-2 bg-gray-200 rounded-full"><div id="progress" class="w-0 h-full bg-black rounded-full transition-all"></div></div>
-                <span id="percent" class="text-[10px] font-bold">0%</span>
-            </div>
+            <span id="percent" class="text-[10px] font-bold">0%</span>
         </div>
         <div id="fieldsContainer" class="space-y-3"></div>
     </div>
@@ -55,16 +47,14 @@
         const fieldNames = [
             "ФИО Ребенка", "Класс", "ИИН ребенка", "ФИО Родителя", "ИИН родителя",
             "Адрес проживания", "Номер телефона", "№ удостоверения", "Кем/когда выдано",
-            "Email", "Первый платеж", "Ежемесячный платеж", "Дата договора (день)", "Срок оплаты (день)"
+            "Email", "Первый платеж", "Ежемесячный платеж", "День договора", "Срок оплаты"
         ];
 
-        // Генерируем поля ввода
         const container = document.getElementById('fieldsContainer');
         fieldNames.forEach((name, i) => {
             container.innerHTML += `
                 <div class="flex items-center border-b border-gray-100 pb-2 gap-2">
-                    <span class="text-[10px] text-gray-400 w-4">${i+1}</span>
-                    <span class="text-[11px] font-medium w-32">${name}</span>
+                    <span class="text-[11px] w-32">${name}</span>
                     <input type="text" id="f${i}" class="input-box flex-grow h-7" oninput="updateStatus()">
                     <div id="s${i}" class="opacity-0 status-badge">OK</div>
                 </div>`;
@@ -74,9 +64,7 @@
             const text = document.getElementById('rawText').value;
             const lines = text.split('\n').filter(l => l.trim() !== "");
             lines.forEach((line, i) => {
-                // Пытаемся очистить строку от номера (типа "1. ")
-                let cleanLine = line.replace(/^\d+[\s.)]+/, "").trim();
-                if(i < 14) document.getElementById('f' + i).value = cleanLine;
+                if(i < 14) document.getElementById('f' + i).value = line.replace(/^\d+[\s.)]+/, "").trim();
             });
             updateStatus();
         }
@@ -84,35 +72,25 @@
         function updateStatus() {
             let filled = 0;
             for(let i=0; i<14; i++) {
-                const val = document.getElementById('f' + i).value;
-                const badge = document.getElementById('s' + i);
-                if(val.length > 0) {
-                    badge.classList.replace('opacity-0', 'opacity-100');
+                if(document.getElementById('f' + i).value.length > 0) {
+                    document.getElementById('s' + i).classList.replace('opacity-0', 'opacity-100');
                     filled++;
                 } else {
-                    badge.classList.replace('opacity-100', 'opacity-0');
+                    document.getElementById('s' + i).classList.replace('opacity-100', 'opacity-0');
                 }
             }
-            const prg = Math.round((filled / 14) * 100);
-            document.getElementById('progress').style.width = prg + '%';
-            document.getElementById('percent').innerText = prg + '%';
+            document.getElementById('percent').innerText = Math.round((filled / 14) * 100) + '%';
         }
 
         function sendToTelegram() {
-            let dataForBot = [];
+            let res = [];
             for (let i = 0; i < 14; i++) {
-                let val = document.getElementById('f' + i).value;
-                dataForBot.push(val);
-                // Вставляем заглушку "Авторасчет" на 13-ю позицию (после индекса 11)
-                if (i === 11) dataForBot.push("Авторасчет");
+                let v = document.getElementById('f' + i).value;
+                if (!v) { tg.showAlert('Заполните всё!'); return; }
+                res.push(v);
+                if (i === 11) res.push("Авторасчет");
             }
-            // Отправляем массив из 15 элементов в бот
-            tg.sendData(JSON.stringify(dataForBot));
-        }
-
-        function fillExample() {
-            document.getElementById('rawText').value = "Иванов Иван\n7 класс\n010203040506\nИванова Анна\n800101400500\nАлматы, Абая 1\n87071112233\n012345678\nMVD, 01.01.2020\ntest@mail.com\n77000\n168000\n12\n15";
-            extractData();
+            tg.sendData(JSON.stringify(res));
         }
     </script>
 </body>
