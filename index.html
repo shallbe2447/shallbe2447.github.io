@@ -9,35 +9,33 @@
     <style>
         body { background-color: #fff; color: #000; font-family: sans-serif; }
         .border-black-thick { border: 2px solid #000; }
-        .status-badge { background-color: #000; color: #fff; border-radius: 12px; padding: 2px 12px; font-size: 10px; font-weight: bold; }
         .input-box { border: 1px solid #000; padding: 8px; width: 100%; outline: none; font-size: 13px; }
-        .btn-black { background-color: #000; color: #fff; padding: 10px 20px; font-weight: bold; }
+        .btn-black { background-color: #000; color: #fff; padding: 12px; font-weight: bold; width: 100%; }
+        .status-badge { background-color: #000; color: #fff; border-radius: 12px; padding: 2px 10px; font-size: 10px; }
     </style>
 </head>
 <body class="p-4">
     <div class="flex items-center gap-3 mb-6">
         <div class="bg-black text-white p-2 rounded">📄</div>
-        <div><h1 class="font-bold text-sm">Contract Filler</h1><p class="text-[10px] text-gray-400">Автозаполнение договоров</p></div>
+        <div><h1 class="font-bold text-sm">Contract Filler</h1><p class="text-[10px] text-gray-400">Автоматизация ЭДО</p></div>
     </div>
 
     <div class="border-black-thick p-4 mb-4">
-        <h2 class="font-bold text-xs uppercase mb-3">Вставьте данные клиента</h2>
-        <textarea id="rawText" class="w-full h-40 border border-black p-2 text-xs mb-3 font-mono" placeholder="ИИН, ФИО..."></textarea>
-        <div class="flex gap-2">
-            <button onclick="extractData()" class="btn-black w-full">Извлечь данные</button>
-        </div>
+        <h2 class="font-bold text-xs uppercase mb-3 text-gray-500">Вставьте данные из CRM</h2>
+        <textarea id="rawText" class="w-full h-40 border border-black p-2 text-xs mb-3 font-mono" placeholder="1. ФИО..."></textarea>
+        <button onclick="extractData()" class="btn-black">ИЗВЛЕЧЬ ДАННЫЕ</button>
     </div>
 
     <div class="border-black-thick p-4 mb-24">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="font-bold text-xs uppercase">Проверка данных</h2>
-            <span id="percent" class="text-[10px] font-bold">0%</span>
+        <div class="flex justify-between items-center mb-4 text-xs font-bold uppercase">
+            <span>Проверка заполнения</span>
+            <span id="percent">0%</span>
         </div>
         <div id="fieldsContainer" class="space-y-3"></div>
     </div>
 
     <div class="fixed bottom-0 left-0 w-full p-3 bg-white border-t border-black">
-        <button onclick="sendToTelegram()" class="w-full btn-black py-4">В TELEGRAM</button>
+        <button onclick="sendToTelegram()" class="btn-black py-4">В TELEGRAM</button>
     </div>
 
     <script>
@@ -83,14 +81,19 @@
         }
 
         function sendToTelegram() {
-            let res = [];
-            for (let i = 0; i < 14; i++) {
-                let v = document.getElementById('f' + i).value;
-                if (!v) { tg.showAlert('Заполните всё!'); return; }
-                res.push(v);
-                if (i === 11) res.push("Авторасчет");
-            }
-            tg.sendData(JSON.stringify(res));
+            try {
+                let res = [];
+                for (let i = 0; i < 14; i++) {
+                    let v = document.getElementById('f' + i).value;
+                    if (!v) { tg.showAlert('Заполните все пункты!'); return; }
+                    res.push(v);
+                    if (i === 11) res.push("Авторасчет");
+                }
+                // Отправка данных
+                tg.sendData(JSON.stringify(res));
+                // Принудительное закрытие для надежности
+                setTimeout(() => { tg.close(); }, 300);
+            } catch (e) { alert("Ошибка: " + e.message); }
         }
     </script>
 </body>
