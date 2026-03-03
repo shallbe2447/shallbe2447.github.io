@@ -1,31 +1,80 @@
-@dp.message(F.web_app_data)
-async def web_app_handler(message: types.Message):
-    user_id = message.from_user.id
-    if user_id not in user_data_storage:
-        await message.answer("❌ Бот не видит шаблон. Скинь файл .docx еще раз!")
-        return
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart EDO Parser</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: var(--tg-theme-bg-color, #f3f4f6); color: var(--tg-theme-text-color, #222); font-family: sans-serif; }
+        .card { background: var(--tg-theme-secondary-bg-color, #fff); border-radius: 16px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+        .text-area { width: 100%; height: 200px; border: 2px dashed #d1d5db; border-radius: 12px; padding: 12px; outline: none; transition: all 0.3s; }
+        .text-area:focus { border-color: #3b82f6; background: #f0f7ff; }
+        .btn-parse { background-color: #3b82f6; color: white; border-radius: 12px; padding: 16px; width: 100%; font-weight: bold; font-size: 1.1rem; }
+        .data-preview { font-size: 0.8rem; color: #6b7280; margin-top: 10px; border-top: 1px solid #e5e7eb; padding-top: 10px; }
+    </style>
+</head>
+<body class="p-4 max-w-md mx-auto">
+    <div class="card p-6">
+        <h1 class="text-xl font-bold mb-2">Умный импорт данных</h1>
+        <p class="text-sm opacity-70 mb-4">Вставь список с данными ниже, как в Lovable:</p>
+        
+        <textarea id="raw_input" class="text-area mb-4" placeholder="1. ФИО Ребенка&#10;2. Класс..."></textarea>
+        
+        <button onclick="parseAndSend()" class="btn-parse shadow-lg active:scale-95 transition-transform">
+            Сгенерировать ЭДО
+        </button>
 
-    # Mini App присылает JSON-массив
-    try:
-        lines = json.loads(message.web_app_data.data)
-        
-        # Проверка: если в Mini App что-то пошло не так
-        if not isinstance(lines, list) or len(lines) < 15:
-            await message.answer("⚠️ Ошибка: Данные из Mini App пришли в неверном формате.")
-            return
+        <div id="preview" class="data_preview hidden">
+            <p id="child_name_preview"></p>
+            <p id="total_items_preview"></p>
+        </div>
+    </div>
 
-        await message.answer(f"⚙️ Обрабатываю данные для: **{lines[0]}**...")
-        
-        u_data = user_data_storage[user_id]
-        # Вызываем твою стандартную функцию fill_contract
-        result_stream = fill_contract(u_data["template"], lines, u_data["month"])
-        
-        # Отправляем готовый файл
-        document = types.BufferedInputFile(result_stream.read(), filename=f"Dogovor_{lines[0]}.docx")
-        await message.answer_document(
-            document, 
-            caption=f"✅ Договор готов!\n👤 Ребенок: {lines[0]}\n📅 Режим: {u_data['month']}\n\nОтправьте админам для ЭДО."
-        )
-    except Exception as e:
-        logging.error(f"Error in web_app_handler: {e}")
-        await message.answer(f"❌ Произошла ошибка при генерации: {e}")
+    <script>
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+
+        function parseAndSend() {
+            const rawText = document.getElementById('raw_input').value;
+            if (!rawText) { tg.showAlert('Вставь текст!'); return; }
+
+            // Логика парсинга как в твоем боте: ищем "цифра. текст"
+            const lines = rawText.split('\n');
+            let result = [];
+            let dataMap = {};
+
+            lines.forEach(line => {
+                if (line.includes('.')) {
+                    let parts = line.split('.');
+                    let num = parseInt(parts[0].trim());
+                    let content = parts.slice(1).join('.').trim();
+                    if (!isNaN(num)) {
+                        dataMap[num] = content;
+                    }
+                }
+            });
+
+            // Формируем финальный массив из 15 пунктов
+            let finalArray = [];
+            for (let i = 1; i <= 15; i++) {
+                if (i === 13) {
+                    finalArray.push("Авторасчет");
+                } else {
+                    finalArray.push(dataMap[i] || "");
+                }
+            }
+
+            // Проверка на заполненность (хотя бы первых 5 важных пунктов)
+            if (!finalArray[0] || !finalArray[1]) {
+                tg.showConfirm('Не удалось распознать пункты 1 и 2. Все равно отправить?', (ok) => {
+                    if (ok) tg.sendData(JSON.stringify(finalArray));
+                });
+            } else {
+                tg.sendData(JSON.stringify(finalArray));
+            }
+        }
+    </script>
+</body>
+</html>
