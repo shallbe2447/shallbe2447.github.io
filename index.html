@@ -2,61 +2,61 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Contract Filler</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Contract AI</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #fff; color: #000; font-family: sans-serif; }
-        .border-black-thick { border: 2px solid #000; }
-        /* Стиль для серых подсказок */
-        input::placeholder, textarea::placeholder { color: #9ca3af; font-style: italic; }
-        .input-box { border: 1px solid #000; padding: 8px; width: 100%; outline: none; font-size: 13px; transition: all 0.2s; }
-        .btn-black { background-color: #000; color: #fff; padding: 12px; font-weight: bold; width: 100%; }
-        .btn-white { background-color: #fff; color: #000; border: 1px solid #000; padding: 12px; font-weight: bold; width: 100%; }
-        .status-badge { background-color: #000; color: #fff; border-radius: 12px; padding: 2px 10px; font-size: 10px; font-weight: bold; }
-        .status-empty { background-color: #ef4444; color: #fff; border-radius: 50%; width: 20px; height: 20px; display: flex; items-center; justify-center; font-size: 12px; }
+        body { background-color: #f9fafb; color: #111827; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        .glass-header { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 50; border-bottom: 1px solid #e5e7eb; }
+        .card { background: white; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #f3f4f6; margin-bottom: 16px; padding: 16px; }
+        .input-field { border: 1px solid #e5e7eb; border-radius: 12px; padding: 10px 14px; width: 100%; font-size: 14px; transition: all 0.2s ease; background: #fff; }
+        .input-field:focus { border-color: #000; ring: 2px; ring-color: rgba(0,0,0,0.05); outline: none; background: #fdfdfd; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; transition: all 0.3s; }
+        .dot-empty { background: #d1d5db; }
+        .dot-filled { background: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.4); }
+        .btn-primary { background: #000; color: #fff; border-radius: 14px; padding: 16px; font-weight: 600; width: 100%; transition: transform 0.1s; }
+        .btn-primary:active { transform: scale(0.98); }
+        .progress-container { height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden; }
     </style>
 </head>
-<body class="p-4">
-    <div class="flex items-center gap-3 mb-6">
-        <div class="bg-black text-white p-2 rounded">📄</div>
-        <div>
-            <h1 class="font-bold text-sm">Contract Filler</h1>
-            <p class="text-[10px] text-gray-400">Автозаполнение данных</p>
+<body class="pb-24">
+    <div class="glass-header p-4 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-black rounded-lg flex items-center justify-center text-white font-bold">C</div>
+            <span class="font-bold text-lg tracking-tight">Contract.ai</span>
         </div>
+        <button onclick="toggleExample()" id="btnExample" class="text-xs font-semibold px-3 py-2 border border-black rounded-full hover:bg-black hover:text-white transition-all">
+            ✨ ПРИМЕР
+        </button>
     </div>
 
-    <div class="border-black-thick p-4 mb-4">
-        <h2 class="font-bold text-[10px] uppercase mb-3 text-gray-500 flex items-center gap-1">
-            <span class="text-xs">✏️</span> Вставьте данные клиента
-        </h2>
-        <textarea id="rawText" class="w-full h-44 border border-black p-2 text-xs mb-3 font-mono" 
-            placeholder="1. ФИО ребенка (например: Иванов Иван Иванович)&#10;2. Класс (например: 7)&#10;3. ИИН ребенка (например: 010203456789)..."></textarea>
-        <div class="flex gap-2">
-            <button id="btnExample" onclick="toggleExample()" class="btn-white text-xs">✨ ПРИМЕР</button>
-            <button onclick="extractData()" class="btn-black text-xs">ИЗВЛЕЧЬ ДАННЫЕ</button>
+    <div class="p-4">
+        <div class="card">
+            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Быстрый ввод</label>
+            <textarea id="rawText" class="w-full h-32 text-sm text-gray-600 bg-gray-50 border-none focus:ring-0 p-0 resize-none" 
+                placeholder="Вставьте текст или список данных..."></textarea>
+            <button onclick="extractData()" class="mt-3 w-full py-2 bg-gray-100 rounded-xl text-xs font-bold text-gray-800 hover:bg-gray-200">ИЗВЛЕЧЬ ДАННЫЕ</button>
         </div>
-    </div>
 
-    <div class="border-black-thick p-4 mb-24">
-        <div class="flex justify-between items-center mb-4">
-            <div class="flex items-center gap-1">
-                <span class="text-xs">ℹ️</span>
-                <h2 class="font-bold text-[10px] uppercase">Проверка данных</h2>
+        <div class="px-2 mb-4 flex justify-between items-end">
+            <div>
+                <h2 class="text-sm font-bold">Проверка данных</h2>
+                <p class="text-[10px] text-gray-400">Заполните все обязательные поля</p>
             </div>
-            <div class="flex items-center gap-2">
-                <div class="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                    <div id="progressLine" class="h-full bg-black w-0 transition-all duration-500"></div>
-                </div>
-                <span id="percent" class="text-[10px] font-bold">0%</span>
+            <span id="percent" class="text-sm font-black">0%</span>
+        </div>
+        <div class="px-2 mb-6">
+            <div class="progress-container">
+                <div id="progressLine" class="h-full bg-black w-0 transition-all duration-500"></div>
             </div>
         </div>
-        <div id="fieldsContainer" class="space-y-3"></div>
+
+        <div id="fieldsContainer" class="space-y-4"></div>
     </div>
 
-    <div class="fixed bottom-0 left-0 w-full p-3 bg-white border-t border-black">
-        <button onclick="sendToTelegram()" class="btn-black py-4 uppercase tracking-wider">В Telegram</button>
+    <div class="fixed bottom-0 left-0 w-full p-4 bg-white/80 backdrop-blur-md border-t border-gray-100">
+        <button onclick="sendToTelegram()" class="btn-primary shadow-lg shadow-black/10">ОТПРАВИТЬ В БОТ</button>
     </div>
 
     <script>
@@ -64,53 +64,47 @@
         tg.expand();
 
         const fieldConfigs = [
-            { name: "ФИО Ребенка", placeholder: "Иванов Иван Иванович" },
-            { name: "Класс", placeholder: "7" },
-            { name: "ИИН ребенка", placeholder: "010203456789" },
-            { name: "ФИО Родителя", placeholder: "Иванова Мария Петровна" },
-            { name: "ИИН родителя", placeholder: "890102345678" },
-            { name: "Адрес проживания", placeholder: "г. Алматы, ул. Абая 10, кв. 5" },
-            { name: "Номер телефона", placeholder: "+7 (777) 123-45-67" },
-            { name: "№ удостоверения", placeholder: "012345678" },
-            { name: "Кем/когда выдано", placeholder: "15.03.2020, МВД РК" },
-            { name: "Email", placeholder: "ivanova@mail.com" },
-            { name: "Первый платеж", placeholder: "150000" },
-            { name: "Ежемесячный платеж", placeholder: "50000" },
-            { name: "День договора", placeholder: "12" },
-            { name: "Срок оплаты", placeholder: "15" }
+            { name: "ФИО Ребенка", ph: "Иванов Иван Иванович" },
+            { name: "Класс", ph: "7" },
+            { name: "ИИН ребенка", ph: "010203456789" },
+            { name: "ФИО Родителя", ph: "Иванова Мария Петровна" },
+            { name: "ИИН родителя", ph: "890102345678" },
+            { name: "Адрес проживания", ph: "г. Алматы, ул. Абая 10" },
+            { name: "Номер телефона", ph: "+7 (707) 123 45 67" },
+            { name: "№ удостоверения", ph: "012345678" },
+            { name: "Кем/когда выдано", ph: "МВД РК, 12.12.2020" },
+            { name: "Email", ph: "client@mail.kz" },
+            { name: "Первый платеж", ph: "150000" },
+            { name: "Ежемесячный платеж", ph: "50000" },
+            { name: "День договора", ph: "12" },
+            { name: "Срок оплаты", ph: "15" }
         ];
 
         const container = document.getElementById('fieldsContainer');
         fieldConfigs.forEach((config, i) => {
             container.innerHTML += `
-                <div class="flex items-center border-b border-gray-100 pb-2 gap-2">
-                    <span class="text-[10px] text-gray-300 w-4">${i+1}</span>
-                    <span class="text-[11px] w-32 font-bold">${config.name}</span>
-                    <input type="text" id="f${i}" class="input-box flex-grow h-7" 
-                        placeholder="например: ${config.placeholder}" oninput="updateStatus()">
-                    <div id="s${i}" class="status-empty">—</div>
+                <div class="relative">
+                    <div class="flex justify-between items-center mb-1 px-1">
+                        <label class="text-[10px] font-bold text-gray-500 uppercase">${config.name}</label>
+                        <div id="s${i}" class="status-dot dot-empty"></div>
+                    </div>
+                    <input type="text" id="f${i}" class="input-field" 
+                        placeholder="${config.ph}" oninput="updateStatus()">
                 </div>`;
         });
 
         let isExampleFilled = false;
 
         function toggleExample() {
+            tg.HapticFeedback.impactOccurred('medium');
             const btn = document.getElementById('btnExample');
             if (!isExampleFilled) {
-                // Заполняем
-                const exampleData = [
-                    "Иванов Иван Иванович", "7 класс", "123456789012", "Иванова Анна Петровна",
-                    "987654321098", "г. Алматы, ул. Абая 10, кв 5", "87071234567", "012345678",
-                    "МВД РК, 12.05.2015", "test@mail.kz", "150000", "50000", "12", "15"
-                ];
+                const exampleData = ["Иванов Иван Иванович", "7", "123456789012", "Иванова Анна Петровна", "987654321098", "г. Алматы, ул. Абая 10", "87071234567", "012345678", "МВД РК, 12.05.2015", "test@mail.kz", "150000", "50000", "12", "15"];
                 exampleData.forEach((val, i) => document.getElementById('f' + i).value = val);
-                document.getElementById('rawText').value = exampleData.join('\n');
                 btn.innerText = "🗑️ ОЧИСТИТЬ";
                 isExampleFilled = true;
             } else {
-                // Очищаем
                 for(let i=0; i<14; i++) document.getElementById('f' + i).value = "";
-                document.getElementById('rawText').value = "";
                 btn.innerText = "✨ ПРИМЕР";
                 isExampleFilled = false;
             }
@@ -118,6 +112,7 @@
         }
 
         function extractData() {
+            tg.HapticFeedback.selectionChanged();
             const text = document.getElementById('rawText').value;
             const lines = text.split('\n').filter(l => l.trim() !== "");
             lines.forEach((line, i) => {
@@ -133,14 +128,12 @@
             let filled = 0;
             for(let i=0; i<14; i++) {
                 const input = document.getElementById('f' + i);
-                const badge = document.getElementById('s' + i);
+                const dot = document.getElementById('s' + i);
                 if(input.value.trim().length > 0) {
-                    badge.innerHTML = "OK";
-                    badge.className = "status-badge";
+                    dot.className = "status-dot dot-filled";
                     filled++;
                 } else {
-                    badge.innerHTML = "—";
-                    badge.className = "status-empty";
+                    dot.className = "status-dot dot-empty";
                 }
             }
             const prg = Math.round((filled / 14) * 100);
@@ -152,11 +145,18 @@
             let res = [];
             for (let i = 0; i < 14; i++) {
                 let v = document.getElementById('f' + i).value.trim();
-                if (!v) { tg.showAlert('Заполните поле: ' + fieldConfigs[i].name); return; }
+                if (!v) { 
+                    tg.HapticFeedback.notificationOccurred('error');
+                    tg.showAlert('Заполните: ' + fieldConfigs[i].name); 
+                    return; 
+                }
                 res.push(v);
             }
+            tg.HapticFeedback.notificationOccurred('success');
             tg.sendData(JSON.stringify(res));
         }
+        
+        updateStatus();
     </script>
 </body>
 </html>
