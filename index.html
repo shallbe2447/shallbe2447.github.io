@@ -78,9 +78,10 @@
             { name: "Ежемесячный платеж", ph: "50000" },
             { name: "День договора", ph: "12" },
             { name: "Срок оплаты", ph: "15" },
-            { name: "День когда начнут обучение", ph: "13" }
+            { name: "День начала обучения", ph: "13" }
         ];
 
+        // Генерируем поля
         const container = document.getElementById('fieldsContainer');
         fieldConfigs.forEach((config, i) => {
             container.innerHTML += `
@@ -101,11 +102,17 @@
             const btn = document.getElementById('btnExample');
             if (!isExampleFilled) {
                 const exampleData = ["Иванов Иван Иванович", "7", "123456789012", "Иванова Анна Петровна", "987654321098", "г. Алматы, ул. Абая 10", "87071234567", "012345678", "МВД РК, 12.05.2015", "test@mail.kz", "150000", "50000", "12", "15", "13"];
-                exampleData.forEach((val, i) => document.getElementById('f' + i).value = val);
+                exampleData.forEach((val, i) => {
+                    const el = document.getElementById('f' + i);
+                    if(el) el.value = val;
+                });
                 btn.innerText = "🗑️ ОЧИСТИТЬ";
                 isExampleFilled = true;
             } else {
-                for(let i=0; i<14; i++) document.getElementById('f' + i).value = "";
+                fieldConfigs.forEach((_, i) => {
+                    const el = document.getElementById('f' + i);
+                    if(el) el.value = "";
+                });
                 btn.innerText = "✨ ПРИМЕР";
                 isExampleFilled = false;
             }
@@ -117,7 +124,7 @@
             const text = document.getElementById('rawText').value;
             const lines = text.split('\n').filter(l => l.trim() !== "");
             lines.forEach((line, i) => {
-                if(i < 14) {
+                if(i < fieldConfigs.length) {
                     let clean = line.replace(/^\d+[\s.)]+/, "").trim();
                     document.getElementById('f' + i).value = clean;
                 }
@@ -127,36 +134,38 @@
 
         function updateStatus() {
             let filled = 0;
-            for(let i=0; i<14; i++) {
+            fieldConfigs.forEach((_, i) => {
                 const input = document.getElementById('f' + i);
                 const dot = document.getElementById('s' + i);
-                if(input.value.trim().length > 0) {
+                if(input && input.value.trim().length > 0) {
                     dot.className = "status-dot dot-filled";
                     filled++;
-                } else {
+                } else if(dot) {
                     dot.className = "status-dot dot-empty";
                 }
-            }
-            const prg = Math.round((filled / 14) * 100);
+            });
+            const prg = Math.round((filled / fieldConfigs.length) * 100);
             document.getElementById('percent').innerText = prg + '%';
             document.getElementById('progressLine').style.width = prg + '%';
         }
 
         function sendToTelegram() {
             let res = [];
-            for (let i = 0; i < 14; i++) {
+            for (let i = 0; i < fieldConfigs.length; i++) {
                 let v = document.getElementById('f' + i).value.trim();
                 if (!v) { 
                     tg.HapticFeedback.notificationOccurred('error');
-                    tg.showAlert('Заполните: ' + fieldConfigs[i].name); 
+                    tg.showAlert('Заполните поле: ' + fieldConfigs[i].name); 
                     return; 
                 }
                 res.push(v);
             }
             tg.HapticFeedback.notificationOccurred('success');
+            // Отправляем массив из 15 элементов в бот
             tg.sendData(JSON.stringify(res));
         }
         
+        // Инициализация статуса при загрузке
         updateStatus();
     </script>
 </body>
