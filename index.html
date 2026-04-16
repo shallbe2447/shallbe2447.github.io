@@ -77,7 +77,8 @@
             { name: "Первый платеж", ph: "150000" },
             { name: "Ежемесячный платеж", ph: "50000" },
             { name: "День договора", ph: "12" },
-            { name: "Срок оплаты", ph: "15" }
+            { name: "Срок оплаты", ph: "15" },
+            { name: "День когда начнут обучение", ph: "13" }
         ];
 
         const container = document.getElementById('fieldsContainer');
@@ -99,7 +100,7 @@
             tg.HapticFeedback.impactOccurred('medium');
             const btn = document.getElementById('btnExample');
             if (!isExampleFilled) {
-                const exampleData = ["Иванов Иван Иванович", "7", "123456789012", "Иванова Анна Петровна", "987654321098", "г. Алматы, ул. Абая 10", "87071234567", "012345678", "МВД РК, 12.05.2015", "test@mail.kz", "150000", "50000", "12", "15"];
+                const exampleData = ["Иванов Иван Иванович", "7", "123456789012", "Иванова Анна Петровна", "987654321098", "г. Алматы, ул. Абая 10", "87071234567", "012345678", "МВД РК, 12.05.2015", "test@mail.kz", "150000", "50000", "12", "15", "13"];
                 exampleData.forEach((val, i) => document.getElementById('f' + i).value = val);
                 btn.innerText = "🗑️ ОЧИСТИТЬ";
                 isExampleFilled = true;
